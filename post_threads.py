@@ -1,52 +1,39 @@
-import os
-import json
-import requests
-import gspread
-from google.oauth2.service_account import Credentials
+# ===============================
+# AMBIL SEMUA DATA DARI SHEET
+# ===============================
+
+rows = sheet.get_all_records()
+
+
+# Jika tidak ada data
+if len(rows) == 0:
+    print("Tidak ada data di Google Sheet")
+    exit()
 
 
 # ===============================
-# AMBIL DATA DARI GITHUB SECRETS
+# CARI POSTING STATUS PENDING
 # ===============================
 
-ACCESS_TOKEN = os.getenv(
-    "THREADS_ACCESS_TOKEN"
-)
-
-USER_ID = os.getenv(
-    "THREADS_USER_ID"
-)
-
-GOOGLE_JSON = os.getenv(
-    "GOOGLE_CREDENTIALS"
-)
-
-SHEET_ID = os.getenv(
-    "GOOGLE_SHEET_ID"
-)
+postingan = None
+baris_ke = None
 
 
-# ===============================
-# KONEKSI KE GOOGLE SHEETS
-# ===============================
+for index, row in enumerate(rows, start=2):
 
-credentials_dict = json.loads(
-    GOOGLE_JSON
-)
+    status = row["STATUS"]
 
-scope = [
-    "https://www.googleapis.com/auth/spreadsheets"
-]
+    if status == "PENDING":
+        postingan = row
+        baris_ke = index
+        break
 
-credentials = Credentials.from_service_account_info(
-    credentials_dict,
-    scopes=scope
-)
 
-client = gspread.authorize(
-    credentials
-)
+# Jika tidak ditemukan PENDING
+if postingan is None:
+    print("Tidak ada posting yang siap upload")
+    exit()
 
-sheet = client.open_by_key(
-    SHEET_ID
-).sheet1
+
+print("Posting ditemukan:")
+print(postingan)
