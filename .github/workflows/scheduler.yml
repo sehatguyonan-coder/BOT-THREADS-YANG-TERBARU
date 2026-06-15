@@ -1,4 +1,4 @@
-name: Scheduler Test
+name: Ping Scheduler
 
 on:
   schedule:
@@ -6,9 +6,7 @@ on:
   workflow_dispatch:
 
 jobs:
-  test:
+  ping:
     runs-on: ubuntu-latest
-
     steps:
-      - name: Test scheduler
-        run: echo "Scheduler works!"
+      - run: echo "SCHEDULER OK"
