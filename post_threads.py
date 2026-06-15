@@ -1,7 +1,7 @@
 import os
 import csv
 import requests
-from datetime import datetime
+from datetime import datetime, timedelta
 
 
 # ==================================
@@ -48,7 +48,11 @@ if len(jadwal) == 0:
 # CEK WAKTU SEKARANG
 # ==================================
 
-sekarang = datetime.now()
+# ==================================
+# UBAH WAKTU UTC GITHUB KE WIB
+# ==================================
+
+sekarang = datetime.utcnow() + timedelta(hours=7)
 
 tanggal = sekarang.strftime("%Y-%m-%d")
 
