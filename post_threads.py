@@ -4,43 +4,29 @@ import requests
 from datetime import datetime
 
 
-# ===============================
+# ==================================
 # AMBIL DATA DARI GITHUB SECRETS
-# ===============================
+# ==================================
 
 ACCESS_TOKEN = os.getenv("THREADS_ACCESS_TOKEN")
-
 USER_ID = os.getenv("THREADS_USER_ID")
 
 
-# ===============================
-# CEK TOKEN
-# ===============================
-
 if not ACCESS_TOKEN:
-    print("❌ THREADS_ACCESS_TOKEN belum ada")
+    print("❌ THREADS_ACCESS_TOKEN tidak ditemukan")
     exit()
 
 if not USER_ID:
-    print("❌ THREADS_USER_ID belum ada")
+    print("❌ THREADS_USER_ID tidak ditemukan")
     exit()
 
 
 print("✅ Secret Threads terbaca")
 
 
-# ===============================
-# AMBIL WAKTU SEKARANG
-# ===============================
-
-sekarang = datetime.now()
-
-tanggal_sekarang = sekarang.strftime("%Y-%m-%d")
-
-jam_sekarang = sekarang.strftime("%H:%M")
-# ===============================
-# BACA FILE JADWAL CSV
-# ===============================
+# ==================================
+# BACA JADWAL CSV
+# ==================================
 
 with open(
     "jadwal.csv",
@@ -48,37 +34,51 @@ with open(
     encoding="utf-8"
 ) as file:
 
-    data = list(
+    jadwal = list(
         csv.DictReader(file)
     )
 
 
-print(
-    "Total jadwal:",
-    len(data)
-)
+if len(jadwal) == 0:
+    print("❌ jadwal.csv kosong")
+    exit()
 
 
-# ===============================
-# CARI POSTING YANG HARUS JALAN
-# ===============================
+# ==================================
+# CEK WAKTU SEKARANG
+# ==================================
+
+sekarang = datetime.now()
+
+tanggal = sekarang.strftime("%Y-%m-%d")
+
+jam = sekarang.strftime("%H:%M")
+
+
+print("Tanggal sekarang:", tanggal)
+print("Jam sekarang:", jam)
+
+
+# ==================================
+# CARI POSTING PENDING
+# ==================================
 
 posting = None
 
 
-for row in data:
+for row in jadwal:
 
-    status = row["STATUS"]
+    status = row["STATUS"].strip().upper()
 
-    tanggal = row["TANGGAL"]
+    tanggal_post = row["TANGGAL"].strip()
 
-    jam = row["JAM"]
+    jam_post = row["JAM"].strip()
 
 
     if (
         status == "PENDING"
-        and tanggal == tanggal_sekarang
-        and jam == jam_sekarang
+        and tanggal_post == tanggal
+        and jam_post == jam
     ):
 
         posting = row
@@ -86,106 +86,128 @@ for row in data:
         break
 
 
-# ===============================
-# JIKA TIDAK ADA JADWAL
-# ===============================
-
 if posting is None:
-
-    print(
-        "Tidak ada posting saat ini."
-    )
-
+    print("⏳ Tidak ada posting yang sesuai jadwal")
     exit()
 
 
-print(
-    "Posting ditemukan:"
-)
-
-print(posting)
-# ===============================
-# AMBIL DATA POSTING
-# ===============================
-
-nama_file = posting["FILE"]
-
-caption = posting["CAPTION"]
-
-path_file = "media/" + nama_file
+print("✅ Posting ditemukan")
 
 
-print("File:", path_file)
+# ==================================
+# AMBIL MEDIA DAN CAPTION
+# ==================================
 
-print("Caption:", caption)
+MEDIA_URL = posting["MEDIA_URL"].strip()
 
-
-# ===============================
-# CEK FILE MEDIA ADA ATAU TIDAK
-# ===============================
-
-if not os.path.exists(path_file):
-
-    print("❌ File media tidak ditemukan")
-
-    exit()
+CAPTION = posting["CAPTION"].strip()
 
 
-print("✅ File media ditemukan")
+print("MEDIA:")
+print(MEDIA_URL)
+
+print("CAPTION:")
+print(CAPTION)
 
 
-# ===============================
+# ==================================
+# CEK JENIS MEDIA
+# ==================================
+
+media_type = "IMAGE"
+
+
+if ".mp4" in MEDIA_URL.lower():
+    media_type = "VIDEO"
+
+
+print("Media Type:", media_type)
+
+
+# ==================================
 # BUAT CONTAINER THREADS
-# ===============================
+# ==================================
 
-url_container = (
+create_url = (
     f"https://graph.threads.net/v1.0/{USER_ID}/threads"
 )
 
 
-data = {
-    "media_type": "TEXT",
-    "text": caption,
+payload = {
+    "media_type": media_type,
+    "text": CAPTION,
     "access_token": ACCESS_TOKEN
 }
 
 
+if media_type == "IMAGE":
+    payload["image_url"] = MEDIA_URL
+
+else:
+    payload["video_url"] = MEDIA_URL
+
+
 response = requests.post(
-    url_container,
-    data=data
+    create_url,
+    data=payload
 )
 
 
-hasil = response.json()
+create_result = response.json()
 
 
-print("Respon Threads:")
+print("CREATE RESPONSE:")
+print(create_result)
 
-print(hasil)
-# ===============================
-# CEK HASIL DARI THREADS
-# ===============================
 
-if "id" in hasil:
+if "id" not in create_result:
+    print("❌ Gagal membuat draft Threads")
+    exit()
+
+
+CREATION_ID = create_result["id"]
+
+
+# ==================================
+# PUBLISH THREADS
+# ==================================
+
+publish_url = (
+    f"https://graph.threads.net/v1.0/{USER_ID}/threads_publish"
+)
+
+
+response_publish = requests.post(
+    publish_url,
+    data={
+        "creation_id": CREATION_ID,
+        "access_token": ACCESS_TOKEN
+    }
+)
+
+
+publish_result = response_publish.json()
+
+
+print("PUBLISH RESPONSE:")
+print(publish_result)
+
+
+# ==================================
+# HASIL AKHIR
+# ==================================
+
+if "id" in publish_result:
 
     print("================================")
-    print("✅ KONEKSI THREADS BERHASIL")
-    print("ID CONTAINER:")
-    print(hasil["id"])
+    print("🎉 BERHASIL POST KE THREADS")
+    print("POST ID:")
+    print(publish_result["id"])
     print("================================")
 
 else:
 
     print("================================")
-    print("❌ GAGAL MEMBUAT POST")
-    print("RESPON ERROR:")
-    print(hasil)
+    print("❌ GAGAL PUBLISH")
+    print(publish_result)
     print("================================")
-
-    exit()
-
-
-print("Bot selesai dijalankan.")
-
-print("Tanggal:", tanggal_sekarang)
-print("Jam:", jam_sekarang)
