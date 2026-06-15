@@ -1,7 +1,8 @@
+```yaml
 name: Post Threads Auto
 
 on:
-  workflow_dispatch
+  workflow_dispatch:
 
 jobs:
   post:
@@ -33,3 +34,11 @@ jobs:
       - name: Save updated jadwal.csv
         run: |
           git config --global user.name "github-actions"
+          git config --global user.email "github-actions@github.com"
+
+          git add jadwal.csv
+
+          git diff --cached --quiet || git commit -m "Auto update status POSTED"
+
+          git push
+```
