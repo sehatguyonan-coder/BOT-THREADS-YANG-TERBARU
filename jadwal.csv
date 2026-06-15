@@ -1,3 +1,2 @@
-STATUS,TANGGAL,JAM,FILE,CAPTION
-PENDING,2026-06-16,08:00,01.jpg,"Posting pertama saya"
-PENDING,2026-06-16,10:00,02.jpg,"Posting kedua saya"
+STATUS,TANGGAL,JAM,MEDIA_URL,CAPTION
+PENDING,2026-06-15,19:45,https://drive.google.com/uc?export=download&id=1uzSXJrKEeevK6-Y2nElCYeP-8nV7FLl6,TEST BOT THREADS
