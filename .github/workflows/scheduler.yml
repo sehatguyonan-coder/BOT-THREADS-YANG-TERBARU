@@ -2,11 +2,13 @@ name: Ping Scheduler
 
 on:
   schedule:
-    - cron: "*/5 * * * *"
+    - cron: "*/1 * * * *"
   workflow_dispatch:
 
 jobs:
-  ping:
+  test:
     runs-on: ubuntu-latest
+
     steps:
-      - run: echo "SCHEDULER OK"
+      - name: Test scheduler
+        run: echo "Scheduler works!"
