@@ -4,13 +4,12 @@ import requests
 from datetime import datetime, timedelta
 
 
-# ==================================
-# AMBIL DATA DARI GITHUB SECRETS
-# ==================================
+# ======================================
+# KONFIGURASI THREADS
+# ======================================
 
 ACCESS_TOKEN = os.getenv("THREADS_ACCESS_TOKEN")
 USER_ID = os.getenv("THREADS_USER_ID")
-
 
 if not ACCESS_TOKEN:
     print("❌ THREADS_ACCESS_TOKEN tidak ditemukan")
@@ -20,13 +19,21 @@ if not USER_ID:
     print("❌ THREADS_USER_ID tidak ditemukan")
     exit()
 
-
 print("✅ Secret Threads terbaca")
 
 
-# ==================================
-# BACA JADWAL CSV
-# ==================================
+# ======================================
+# WAKTU SEKARANG (WIB)
+# ======================================
+
+sekarang = datetime.utcnow() + timedelta(hours=7)
+
+print("Waktu WIB:", sekarang.strftime("%Y-%m-%d %H:%M"))
+
+
+# ======================================
+# BACA JADWAL
+# ======================================
 
 with open(
     "jadwal.csv",
@@ -34,104 +41,82 @@ with open(
     encoding="utf-8"
 ) as file:
 
-    jadwal = list(
-        csv.DictReader(file)
-    )
+    jadwal = list(csv.DictReader(file))
 
 
-if len(jadwal) == 0:
+if not jadwal:
     print("❌ jadwal.csv kosong")
     exit()
 
 
-# ==================================
-# CEK WAKTU SEKARANG
-# ==================================
-
-# ==================================
-# UBAH WAKTU UTC GITHUB KE WIB
-# ==================================
-
-sekarang = datetime.utcnow() + timedelta(hours=7)
-
-tanggal = sekarang.strftime("%Y-%m-%d")
-
-jam = sekarang.strftime("%H:%M")
-
-
-print("Tanggal sekarang:", tanggal)
-print("Jam sekarang:", jam)
-
-
-# ==================================
-# CARI POSTING PENDING
-# ==================================
+# ======================================
+# CARI POSTING YANG SUDAH WAKTUNYA
+# ======================================
 
 posting = None
 index_posting = None
-
 
 for index, row in enumerate(jadwal):
 
     status = row["STATUS"].strip().upper()
 
-    tanggal_post = row["TANGGAL"].strip()
+    if status != "PENDING":
+        continue
 
-    jam_post = row["JAM"].strip()
+
+    waktu_jadwal = datetime.strptime(
+        row["TANGGAL"].strip() + " " +
+        row["JAM"].strip(),
+        "%Y-%m-%d %H:%M"
+    )
 
 
-    if (
-        status == "PENDING"
-        and tanggal_post == tanggal
-        and jam_post == jam
-    ):
+    if sekarang >= waktu_jadwal:
 
-posting = row
-index_posting = index
-break
+        posting = row
+        index_posting = index
+        break
 
 
 if posting is None:
-    print("⏳ Tidak ada posting yang sesuai jadwal")
+    print("⏳ Tidak ada posting yang harus dijalankan")
     exit()
 
 
-print("✅ Posting ditemukan")
+print("✅ Jadwal ditemukan")
 
 
-# ==================================
-# AMBIL MEDIA DAN CAPTION
-# ==================================
+# ======================================
+# DATA POSTING
+# ======================================
 
 MEDIA_URL = posting["MEDIA_URL"].strip()
-
 CAPTION = posting["CAPTION"].strip()
 
 
-print("MEDIA:")
+print("Media:")
 print(MEDIA_URL)
 
-print("CAPTION:")
+print("Caption:")
 print(CAPTION)
 
 
-# ==================================
+# ======================================
 # CEK JENIS MEDIA
-# ==================================
+# ======================================
 
 media_type = "IMAGE"
-
 
 if ".mp4" in MEDIA_URL.lower():
     media_type = "VIDEO"
 
 
-print("Media Type:", media_type)
+print("Jenis media:", media_type)
 
 
-# ==================================
+# ======================================
 # BUAT CONTAINER THREADS
-# ==================================
+# ======================================
 
 create_url = (
     f"https://graph.threads.net/v1.0/{USER_ID}/threads"
@@ -147,7 +132,6 @@ payload = {
 
 if media_type == "IMAGE":
     payload["image_url"] = MEDIA_URL
-
 else:
     payload["video_url"] = MEDIA_URL
 
@@ -166,23 +150,23 @@ print(create_result)
 
 
 if "id" not in create_result:
-    print("❌ Gagal membuat draft Threads")
+    print("❌ Gagal membuat media container")
     exit()
 
 
 CREATION_ID = create_result["id"]
 
 
-# ==================================
+# ======================================
 # PUBLISH THREADS
-# ==================================
+# ======================================
 
 publish_url = (
     f"https://graph.threads.net/v1.0/{USER_ID}/threads_publish"
 )
 
 
-response_publish = requests.post(
+response = requests.post(
     publish_url,
     data={
         "creation_id": CREATION_ID,
@@ -191,16 +175,16 @@ response_publish = requests.post(
 )
 
 
-publish_result = response_publish.json()
+publish_result = response.json()
 
 
 print("PUBLISH RESPONSE:")
 print(publish_result)
 
 
-# ==================================
-# HASIL AKHIR
-# ==================================
+# ======================================
+# JIKA BERHASIL
+# ======================================
 
 if "id" in publish_result:
 
@@ -209,35 +193,37 @@ if "id" in publish_result:
     print("POST ID:")
     print(publish_result["id"])
     print("================================")
-# ==================================
-# UBAH STATUS MENJADI POSTED
-# ==================================
-
-jadwal[index_posting]["STATUS"] = "POSTED"
-
-with open(
-    "jadwal.csv",
-    "w",
-    newline="",
-    encoding="utf-8"
-) as file:
-
-    writer = csv.DictWriter(
-        file,
-        fieldnames=[
-            "STATUS",
-            "TANGGAL",
-            "JAM",
-            "MEDIA_URL",
-            "CAPTION"
-        ]
-    )
-
-    writer.writeheader()
-    writer.writerows(jadwal)
 
 
-print("✅ Status jadwal diubah menjadi POSTED")
+    # Ubah status menjadi POSTED
+    jadwal[index_posting]["STATUS"] = "POSTED"
+
+
+    with open(
+        "jadwal.csv",
+        "w",
+        newline="",
+        encoding="utf-8"
+    ) as file:
+
+        writer = csv.DictWriter(
+            file,
+            fieldnames=[
+                "STATUS",
+                "TANGGAL",
+                "JAM",
+                "MEDIA_URL",
+                "CAPTION"
+            ]
+        )
+
+        writer.writeheader()
+        writer.writerows(jadwal)
+
+
+    print("✅ Status berubah menjadi POSTED")
+
+
 else:
 
     print("================================")
