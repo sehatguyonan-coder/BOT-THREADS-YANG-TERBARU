@@ -1,4 +1,4 @@
-name: Post to Threads
+name: Post to Threads Auto
 
 on:
   schedule:
@@ -45,5 +45,3 @@ jobs:
           git diff --cached --quiet || git commit -m "Auto update status POSTED"
 
           git push
-
-          # refresh scheduler 16 Juni 2026 00:25
