@@ -68,9 +68,10 @@ print("Jam sekarang:", jam)
 # ==================================
 
 posting = None
+index_posting = None
 
 
-for row in jadwal:
+for index, row in enumerate(jadwal):
 
     status = row["STATUS"].strip().upper()
 
@@ -85,9 +86,9 @@ for row in jadwal:
         and jam_post == jam
     ):
 
-        posting = row
-
-        break
+posting = row
+index_posting = index
+break
 
 
 if posting is None:
@@ -208,7 +209,35 @@ if "id" in publish_result:
     print("POST ID:")
     print(publish_result["id"])
     print("================================")
+# ==================================
+# UBAH STATUS MENJADI POSTED
+# ==================================
 
+jadwal[index_posting]["STATUS"] = "POSTED"
+
+with open(
+    "jadwal.csv",
+    "w",
+    newline="",
+    encoding="utf-8"
+) as file:
+
+    writer = csv.DictWriter(
+        file,
+        fieldnames=[
+            "STATUS",
+            "TANGGAL",
+            "JAM",
+            "MEDIA_URL",
+            "CAPTION"
+        ]
+    )
+
+    writer.writeheader()
+    writer.writerows(jadwal)
+
+
+print("✅ Status jadwal diubah menjadi POSTED")
 else:
 
     print("================================")
