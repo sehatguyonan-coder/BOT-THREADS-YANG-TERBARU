@@ -4,77 +4,102 @@ import requests
 from datetime import datetime, timedelta
 
 
-# ===============================
-# WAKTU WIB
-# ===============================
+# ======================================
+# KONFIGURASI THREADS
+# ======================================
 
-wib = datetime.utcnow() + timedelta(hours=7)
+TOKEN = os.getenv("THREADS_ACCESS_TOKEN")
+USER_ID = os.getenv("THREADS_USER_ID")
+
+if not TOKEN:
+    print("❌ THREADS_ACCESS_TOKEN tidak ditemukan")
+    exit()
+
+if not USER_ID:
+    print("❌ THREADS_USER_ID tidak ditemukan")
+    exit()
 
 print("✅ Secret Threads terbaca")
 
-token = os.getenv("THREADS_ACCESS_TOKEN")
-user_id = os.getenv("THREADS_USER_ID")
 
-if not token or not user_id:
-    print("❌ Secret tidak ditemukan")
-    exit()
+# ======================================
+# WAKTU SEKARANG WIB
+# ======================================
+
+sekarang = datetime.utcnow() + timedelta(hours=7)
+
+print("Waktu WIB:", sekarang.strftime("%Y-%m-%d %H:%M"))
 
 
-print("Waktu WIB:", wib.strftime("%Y-%m-%d %H:%M"))
+# ======================================
+# BACA JADWAL CSV
+# ======================================
 
+with open(
+    "jadwal.csv",
+    "r",
+    encoding="utf-8"
+) as file:
 
-# ===============================
-# BACA CSV
-# ===============================
-
-with open("jadwal.csv", "r", encoding="utf-8") as file:
-    data = csv.DictReader(file)
-    rows = list(data)
+    rows = list(csv.DictReader(file))
 
 
 print("✅ Jadwal berhasil dibaca")
 
 
-# ===============================
+# ======================================
 # CARI JADWAL PENDING
-# ===============================
+# ======================================
 
 postingan = None
-
-for row in rows:
-
-    status = row["STATUS"].strip()
-
-    tanggal = row["TANGGAL"].strip()
-    jam = row["JAM"].strip()
+index_postingan = None
 
 
-    jadwal = datetime.strptime(
-        f"{tanggal} {jam}",
+for index, row in enumerate(rows):
+
+    status = row["STATUS"].strip().upper()
+
+
+    if status != "PENDING":
+        continue
+
+
+    waktu_jadwal = datetime.strptime(
+        row["TANGGAL"].strip()
+        + " "
+        + row["JAM"].strip(),
         "%Y-%m-%d %H:%M"
     )
 
 
-    if status == "PENDING" and wib >= jadwal:
+    if sekarang >= waktu_jadwal:
+
         postingan = row
+        index_postingan = index
         break
 
 
+if postingan is None:
 
-if not postingan:
     print("⏳ Tidak ada posting yang harus dijalankan")
     exit()
 
 
-print("\n🚀 JADWAL POSTING DITEMUKAN")
+print("🚀 Jadwal posting ditemukan")
 
 
-# ===============================
-# AMBIL MEDIA
-# ===============================
+# ======================================
+# AMBIL CAPTION
+# ======================================
+
+caption = postingan["CAPTION"].strip()
+
+
+# ======================================
+# AMBIL SEMUA MEDIA
+# ======================================
 
 media_list = []
-
 
 for kolom in [
     "MEDIA1",
@@ -89,64 +114,60 @@ for kolom in [
         media_list.append(link)
 
 
+if not media_list:
 
-print("\nJumlah media:", len(media_list))
+    print("❌ Tidak ada media ditemukan")
+    exit()
 
 
-for i, media in enumerate(media_list, start=1):
+print("Jumlah media:", len(media_list))
 
-    if ".mp4" in media.lower():
-        jenis = "VIDEO"
-    else:
-        jenis = "IMAGE"
 
+# ======================================
+# BUAT CHILD MEDIA CONTAINER
+# ======================================
+
+child_ids = []
+
+
+for nomor, media in enumerate(
+    media_list,
+    start=1
+):
 
     print(
-        f"""
-MEDIA {i}
-Jenis : {jenis}
-Link  : {media}
-"""
+        f"\n📤 Upload media {nomor}"
     )
 
 
-# ===============================
-# CAPTION
-# ===============================
-
-
-caption = postingan["CAPTION"]
-
-print("CAPTION:")
-print("================")
-print(caption)
-print("================")
-# ===============================
-# BUAT CHILD MEDIA CONTAINER
-# ===============================
-
-child_ids = []
-for i, media in enumerate(media_list, start=1):
-
     if ".mp4" in media.lower():
+
         media_type = "VIDEO"
+
     else:
+
         media_type = "IMAGE"
 
 
-    print(f"\n📤 Upload media {i}")
-
     url = (
-        f"https://graph.threads.net/v1.0/{user_id}/threads"
+        f"https://graph.threads.net/v1.0/"
+        f"{USER_ID}/threads"
     )
 
 
     payload = {
         "media_type": media_type,
-        "image_url" if media_type == "IMAGE"
-        else "video_url": media,
-        "access_token": token
+        "access_token": TOKEN
     }
+
+
+    if media_type == "IMAGE":
+
+        payload["image_url"] = media
+
+    else:
+
+        payload["video_url"] = media
 
 
     response = requests.post(
@@ -163,38 +184,47 @@ for i, media in enumerate(media_list, start=1):
 
 
     if "id" not in hasil:
-        print("❌ Gagal membuat child media")
+
+        print("❌ Gagal membuat child container")
         exit()
 
 
-    child_ids.append(hasil["id"])
+    child_id = hasil["id"]
 
 
-    print(
-        f"✅ Child ID {i}:",
-        hasil["id"]
+    child_ids.append(
+        child_id
     )
 
 
-print("\n========================")
-print("SEMUA CHILD BERHASIL")
-print("TOTAL CHILD:", len(child_ids))
-print("========================")
-# ===============================
+    print(
+        "✅ Child berhasil:",
+        child_id
+    )
+
+
+print("\n✅ Semua child berhasil dibuat")
+
+
+# ======================================
 # BUAT CAROUSEL CONTAINER
-# ===============================
-
-print("\n🎠 Membuat Carousel Container")
+# ======================================
 
 
-url = f"https://graph.threads.net/v1.0/{user_id}/threads"
+print("\n🎠 Membuat Carousel")
+
+
+url = (
+    f"https://graph.threads.net/v1.0/"
+    f"{USER_ID}/threads"
+)
 
 
 payload = {
     "media_type": "CAROUSEL",
     "children": ",".join(child_ids),
     "text": caption,
-    "access_token": token
+    "access_token": TOKEN
 }
 
 
@@ -212,12 +242,97 @@ print(hasil)
 
 
 if "id" not in hasil:
-    print("❌ Gagal membuat Carousel Container")
+
+    print("❌ Gagal membuat carousel")
     exit()
 
 
 carousel_id = hasil["id"]
 
 
-print("\n✅ Carousel Container berhasil dibuat")
-print("Carousel ID:", carousel_id)
+print(
+    "✅ Carousel dibuat:",
+    carousel_id
+)
+
+
+# ======================================
+# PUBLISH CAROUSEL
+# ======================================
+
+
+print("\n🚀 Publish ke Threads")
+
+
+url = (
+    f"https://graph.threads.net/v1.0/"
+    f"{USER_ID}/threads_publish"
+)
+
+
+response = requests.post(
+    url,
+    data={
+        "creation_id": carousel_id,
+        "access_token": TOKEN
+    }
+)
+
+
+hasil = response.json()
+
+
+print("RESPONSE PUBLISH:")
+print(hasil)
+
+
+if "id" not in hasil:
+
+    print("❌ Publish gagal")
+    exit()
+
+
+thread_id = hasil["id"]
+
+
+print("\n🎉 BERHASIL POST KE THREADS")
+print(
+    "THREAD ID:",
+    thread_id
+)
+
+
+# ======================================
+# UPDATE STATUS MENJADI POSTED
+# ======================================
+
+
+rows[index_postingan]["STATUS"] = "POSTED"
+
+
+with open(
+    "jadwal.csv",
+    "w",
+    newline="",
+    encoding="utf-8"
+) as file:
+
+    writer = csv.DictWriter(
+        file,
+        fieldnames=[
+            "STATUS",
+            "TANGGAL",
+            "JAM",
+            "MEDIA1",
+            "MEDIA2",
+            "MEDIA3",
+            "MEDIA4",
+            "CAPTION"
+        ]
+    )
+
+    writer.writeheader()
+    writer.writerows(rows)
+
+
+print("✅ Status berubah menjadi POSTED")
