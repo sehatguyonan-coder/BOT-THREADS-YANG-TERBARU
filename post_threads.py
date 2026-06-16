@@ -189,7 +189,7 @@ for index, row in enumerate(
     ).strip()
 
     if not tanggal or not jam:
-    continue
+        continue
 
     waktu_jadwal = datetime.strptime(
         f"{tanggal} {jam}",
