@@ -395,13 +395,10 @@ print(
     "\n================================"
 )
 
-print("===============================")
-print("✅ Semua child media berhasil")
-print("Total media:", len(children))
-print("===============================")
+print(
+    "✅ Semua child media berhasil"
+)
 
-print("⏳ Menunggu media diproses Threads...")
-time.sleep(30)
 print(
     "Total media:",
     len(child_ids)
@@ -411,9 +408,15 @@ print(
     "================================"
 )
 
+print(
+    "⏳ Menunggu media diproses Threads..."
+)
 
-# ======================================
 time.sleep(30)
+print(
+    "================================"
+)
+
 # MEMBUAT CAROUSEL CONTAINER
 # ======================================
 
@@ -577,7 +580,7 @@ print(
 # Kolom STATUS ada di kolom A
 worksheet.update_cell(
     baris_sheet,
-    1,
+    2,
     "POSTED"
 )
 
