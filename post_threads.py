@@ -228,7 +228,7 @@ caption = str(
 
 
 print(
-    "Caption ditemukan"
+    "✅ Caption ditemukan"
 )
 
 
