@@ -1,72 +1,195 @@
 import os
-import csv
+import json
 import requests
+import gspread
+
 from datetime import datetime, timedelta
+from google.oauth2.service_account import Credentials
 
 
 # ======================================
 # KONFIGURASI THREADS
 # ======================================
 
-ACCESS_TOKEN = os.getenv("THREADS_ACCESS_TOKEN")
-USER_ID = os.getenv("THREADS_USER_ID")
+ACCESS_TOKEN = os.getenv(
+    "THREADS_ACCESS_TOKEN"
+)
+
+USER_ID = os.getenv(
+    "THREADS_USER_ID"
+)
+
 
 if not ACCESS_TOKEN:
-    print("❌ THREADS_ACCESS_TOKEN tidak ditemukan")
+    print(
+        "❌ THREADS_ACCESS_TOKEN tidak ditemukan"
+    )
     exit()
+
 
 if not USER_ID:
-    print("❌ THREADS_USER_ID tidak ditemukan")
-    exit()
-
-print("✅ Secret Threads terbaca")
-
-
-# ======================================
-# WAKTU SEKARANG (WIB)
-# ======================================
-
-sekarang = datetime.utcnow() + timedelta(hours=7)
-
-print("Waktu WIB:", sekarang.strftime("%Y-%m-%d %H:%M"))
-
-
-# ======================================
-# BACA JADWAL
-# ======================================
-
-with open(
-    "jadwal.csv",
-    "r",
-    encoding="utf-8"
-) as file:
-
-    jadwal = list(csv.DictReader(file))
-
-
-if not jadwal:
-    print("❌ jadwal.csv kosong")
+    print(
+        "❌ THREADS_USER_ID tidak ditemukan"
+    )
     exit()
 
 
+print(
+    "✅ Secret Threads terbaca"
+)
+
+
 # ======================================
-# CARI POSTING YANG SUDAH WAKTUNYA
+# KONFIGURASI GOOGLE SHEETS
 # ======================================
+
+GOOGLE_SHEET_ID = os.getenv(
+    "GOOGLE_SHEET_ID"
+)
+
+
+GOOGLE_CREDENTIALS = os.getenv(
+    "GOOGLE_CREDENTIALS"
+)
+
+
+if not GOOGLE_SHEET_ID:
+    print(
+        "❌ GOOGLE_SHEET_ID tidak ditemukan"
+    )
+    exit()
+
+
+if not GOOGLE_CREDENTIALS:
+    print(
+        "❌ GOOGLE_CREDENTIALS tidak ditemukan"
+    )
+    exit()
+
+
+print(
+    "✅ Secret Google Sheets terbaca"
+)
+
+
+# ======================================
+# LOGIN GOOGLE SHEETS
+# ======================================
+
+
+credentials_info = json.loads(
+    GOOGLE_CREDENTIALS
+)
+
+
+scope = [
+    "https://www.googleapis.com/auth/spreadsheets"
+]
+
+
+credentials = (
+    Credentials.from_service_account_info(
+        credentials_info,
+        scopes=scope
+    )
+)
+
+
+client = gspread.authorize(
+    credentials
+)
+
+
+sheet = client.open_by_key(
+    GOOGLE_SHEET_ID
+)
+
+
+worksheet = sheet.sheet1
+
+
+print(
+    "✅ Berhasil terhubung ke Google Sheet"
+)
+
+
+# ======================================
+# WAKTU SEKARANG WIB
+# ======================================
+
+
+sekarang = (
+    datetime.utcnow()
+    + timedelta(hours=7)
+)
+
+
+print(
+    "Waktu WIB:",
+    sekarang.strftime(
+        "%Y-%m-%d %H:%M"
+    )
+)
+
+
+# ======================================
+# AMBIL DATA GOOGLE SHEET
+# ======================================
+
+
+rows = worksheet.get_all_records()
+
+
+if not rows:
+
+    print(
+        "❌ Google Sheet kosong"
+    )
+
+    exit()
+
+
+print(
+    "✅ Data Google Sheet berhasil dibaca"
+)
+
+
+# ======================================
+# CARI POSTING PENDING
+# ======================================
+
 
 posting = None
-index_posting = None
 
-for index, row in enumerate(jadwal):
+baris_sheet = None
 
-    status = row["STATUS"].strip().upper()
+
+for index, row in enumerate(
+    rows,
+    start=2
+):
+
+    status = str(
+        row["STATUS"]
+    ).strip().upper()
+
 
     if status != "PENDING":
         continue
 
 
+    tanggal = str(
+        row["TANGGAL"]
+    ).strip()
+
+
+    jam = str(
+        row["JAM"]
+    ).strip()
+
+
     waktu_jadwal = datetime.strptime(
-        row["TANGGAL"].strip() + " " +
-        row["JAM"].strip(),
+        f"{tanggal} {jam}",
         "%Y-%m-%d %H:%M"
     )
 
@@ -74,159 +197,399 @@ for index, row in enumerate(jadwal):
     if sekarang >= waktu_jadwal:
 
         posting = row
-        index_posting = index
+
+        baris_sheet = index
+
         break
 
 
 if posting is None:
-    print("⏳ Tidak ada posting yang harus dijalankan")
+
+    print(
+        "⏳ Tidak ada posting yang dijalankan"
+    )
+
     exit()
 
 
-print("✅ Jadwal ditemukan")
+print(
+    "🚀 Jadwal posting ditemukan"
+)
 
 
 # ======================================
-# DATA POSTING
+# CAPTION
 # ======================================
 
-MEDIA_URL = posting["MEDIA_URL"].strip()
-CAPTION = posting["CAPTION"].strip()
+
+caption = str(
+    posting["CAPTION"]
+).strip()
 
 
-print("Media:")
-print(MEDIA_URL)
-
-print("Caption:")
-print(CAPTION)
-
-
-# ======================================
-# CEK JENIS MEDIA
-# ======================================
-
-media_type = "IMAGE"
-
-if ".mp4" in MEDIA_URL.lower():
-    media_type = "VIDEO"
-
-
-print("Jenis media:", media_type)
+print(
+    "Caption ditemukan"
+)
 
 
 # ======================================
-# BUAT CONTAINER THREADS
+# AMBIL MEDIA
 # ======================================
 
-create_url = (
-    f"https://graph.threads.net/v1.0/{USER_ID}/threads"
+
+media_list = []
+
+
+for nomor in range(1, 4):
+
+    url = str(
+        posting.get(
+            f"MEDIA{nomor}",
+            ""
+        )
+    ).strip()
+
+
+    tipe = str(
+        posting.get(
+            f"TYPE{nomor}",
+            ""
+        )
+    ).strip().upper()
+
+
+    if url:
+
+        media_list.append(
+            {
+                "url": url,
+                "type": tipe
+            }
+        )
+
+
+if not media_list:
+
+    print(
+        "❌ Tidak ada media ditemukan"
+    )
+
+    exit()
+
+
+print(
+    f"📁 Jumlah media: {len(media_list)}"
+)
+# ======================================
+# UPLOAD CHILD MEDIA CONTAINER
+# ======================================
+
+
+child_ids = []
+
+
+for nomor, media in enumerate(
+    media_list,
+    start=1
+):
+
+    print(
+        f"\n📤 Upload media {nomor}"
+    )
+
+
+    media_type = media["type"]
+
+
+    if media_type not in [
+        "IMAGE",
+        "VIDEO"
+    ]:
+
+        print(
+            f"❌ TYPE media salah pada MEDIA{nomor}: {media_type}"
+        )
+
+        print(
+            "Gunakan hanya IMAGE atau VIDEO di Google Sheet"
+        )
+
+        exit()
+
+
+    url = (
+        f"https://graph.threads.net/v1.0/"
+        f"{USER_ID}/threads"
+    )
+
+
+    payload = {
+        "media_type": media_type,
+        "access_token": ACCESS_TOKEN
+    }
+
+
+    # Jika gambar
+    if media_type == "IMAGE":
+
+        payload[
+            "image_url"
+        ] = media["url"]
+
+
+    # Jika video
+    else:
+
+        payload[
+            "video_url"
+        ] = media["url"]
+
+
+    response = requests.post(
+        url,
+        data=payload
+    )
+
+
+    hasil = response.json()
+
+
+    print(
+        "RESPONSE:",
+        hasil
+    )
+
+
+    if "id" not in hasil:
+
+        print(
+            "❌ Gagal membuat child media"
+        )
+
+        print(
+            "Cek kembali link media atau akses API"
+        )
+
+        exit()
+
+
+    child_id = hasil["id"]
+
+
+    child_ids.append(
+        child_id
+    )
+
+
+    print(
+        "✅ Child berhasil dibuat:"
+    )
+
+    print(
+        child_id
+    )
+
+
+print(
+    "\n================================"
+)
+
+print(
+    "✅ Semua child media berhasil"
+)
+
+print(
+    "Total media:",
+    len(child_ids)
+)
+
+print(
+    "================================"
+)
+
+
+# ======================================
+# MEMBUAT CAROUSEL CONTAINER
+# ======================================
+
+
+print(
+    "\n🎠 Membuat Carousel Container"
+)
+
+
+url = (
+    f"https://graph.threads.net/v1.0/"
+    f"{USER_ID}/threads"
 )
 
 
 payload = {
-    "media_type": media_type,
-    "text": CAPTION,
+    "media_type": "CAROUSEL",
+    "children": ",".join(
+        child_ids
+    ),
+    "text": caption,
     "access_token": ACCESS_TOKEN
 }
 
 
-if media_type == "IMAGE":
-    payload["image_url"] = MEDIA_URL
-else:
-    payload["video_url"] = MEDIA_URL
-
-
 response = requests.post(
-    create_url,
+    url,
     data=payload
 )
 
 
-create_result = response.json()
+hasil = response.json()
 
 
-print("CREATE RESPONSE:")
-print(create_result)
+print(
+    "RESPONSE CAROUSEL:"
+)
+
+print(
+    hasil
+)
 
 
-if "id" not in create_result:
-    print("❌ Gagal membuat media container")
+if "id" not in hasil:
+
+    print(
+        "❌ Gagal membuat Carousel Container"
+    )
+
     exit()
 
 
-CREATION_ID = create_result["id"]
+carousel_id = hasil["id"]
 
 
-# ======================================
-# PUBLISH THREADS
-# ======================================
-
-publish_url = (
-    f"https://graph.threads.net/v1.0/{USER_ID}/threads_publish"
+print(
+    "✅ Carousel berhasil dibuat"
 )
+
+print(
+    "Carousel ID:",
+    carousel_id
+)
+# ======================================
+# PUBLISH CAROUSEL KE THREADS
+# ======================================
+
+
+print(
+    "\n🚀 Publish Carousel ke Threads"
+)
+
+
+url = (
+    f"https://graph.threads.net/v1.0/"
+    f"{USER_ID}/threads_publish"
+)
+
+
+payload = {
+    "creation_id": carousel_id,
+    "access_token": ACCESS_TOKEN
+}
 
 
 response = requests.post(
-    publish_url,
-    data={
-        "creation_id": CREATION_ID,
-        "access_token": ACCESS_TOKEN
-    }
+    url,
+    data=payload
 )
 
 
-publish_result = response.json()
+hasil = response.json()
 
 
-print("PUBLISH RESPONSE:")
-print(publish_result)
+print(
+    "RESPONSE PUBLISH:"
+)
+
+print(
+    hasil
+)
 
 
 # ======================================
-# JIKA BERHASIL
+# CEK HASIL PUBLISH
 # ======================================
 
-if "id" in publish_result:
 
-    print("================================")
-    print("🎉 BERHASIL POST KE THREADS")
-    print("POST ID:")
-    print(publish_result["id"])
-    print("================================")
+if "id" not in hasil:
 
+    print(
+        "❌ Gagal Publish ke Threads"
+    )
 
-    # Ubah status menjadi POSTED
-    jadwal[index_posting]["STATUS"] = "POSTED"
+    exit()
 
 
-    with open(
-        "jadwal.csv",
-        "w",
-        newline="",
-        encoding="utf-8"
-    ) as file:
-
-        writer = csv.DictWriter(
-            file,
-            fieldnames=[
-                "STATUS",
-                "TANGGAL",
-                "JAM",
-                "MEDIA_URL",
-                "CAPTION"
-            ]
-        )
-
-        writer.writeheader()
-        writer.writerows(jadwal)
+thread_id = hasil["id"]
 
 
-    print("✅ Status berubah menjadi POSTED")
+print(
+    "\n================================"
+)
+
+print(
+    "🎉 BERHASIL POST KE THREADS"
+)
+
+print(
+    "THREAD ID:"
+)
+
+print(
+    thread_id
+)
+
+print(
+    "================================"
+)
 
 
-else:
+# ======================================
+# UPDATE STATUS MENJADI POSTED
+# ======================================
 
-    print("================================")
-    print("❌ GAGAL PUBLISH")
-    print(publish_result)
-    print("================================")
+
+print(
+    "\n📝 Mengubah STATUS menjadi POSTED"
+)
+
+
+# Kolom STATUS ada di kolom A
+worksheet.update_cell(
+    baris_sheet,
+    1,
+    "POSTED"
+)
+
+
+print(
+    "✅ STATUS berhasil diubah menjadi POSTED"
+)
+
+
+# ======================================
+# SELESAI
+# ======================================
+
+
+print(
+    "\n================================"
+)
+
+print(
+    "🤖 BOT THREADS CAROUSEL SELESAI"
+)
+
+print(
+    "Siap menunggu jadwal berikutnya..."
+)
+
+print(
+    "================================"
+)
