@@ -1,5 +1,6 @@
 import csv
 import os
+import requests
 from datetime import datetime, timedelta
 
 
@@ -116,11 +117,66 @@ Link  : {media}
 
 caption = postingan["CAPTION"]
 
-
 print("CAPTION:")
 print("================")
 print(caption)
 print("================")
+# ===============================
+# BUAT CHILD MEDIA CONTAINER
+# ===============================
+
+child_ids = []
+for i, media in enumerate(media_list, start=1):
+
+    if ".mp4" in media.lower():
+        media_type = "VIDEO"
+    else:
+        media_type = "IMAGE"
 
 
-print("\n✅ STEP 3 BERHASIL")
+    print(f"\n📤 Upload media {i}")
+
+    url = (
+        f"https://graph.threads.net/v1.0/{user_id}/threads"
+    )
+
+
+    payload = {
+        "media_type": media_type,
+        "image_url" if media_type == "IMAGE"
+        else "video_url": media,
+        "access_token": token
+    }
+
+
+    response = requests.post(
+        url,
+        data=payload
+    )
+
+
+    hasil = response.json()
+
+
+    print("RESPONSE:")
+    print(hasil)
+
+
+    if "id" not in hasil:
+        print("❌ Gagal membuat child media")
+        exit()
+
+
+    child_ids.append(hasil["id"])
+
+
+    print(
+        f"✅ Child ID {i}:",
+        hasil["id"]
+    )
+
+
+print("\n========================")
+print("SEMUA CHILD BERHASIL")
+print("TOTAL CHILD:", len(child_ids))
+print("========================")
