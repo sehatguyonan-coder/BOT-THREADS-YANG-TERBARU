@@ -395,12 +395,13 @@ print(
     "\n================================"
 )
 
-print(
-    "✅ Semua child media berhasil"
-    print("⏳ Menunggu media diproses Threads...")
-    time.sleep(30)
-)
+print("===============================")
+print("✅ Semua child media berhasil")
+print("Total media:", len(children))
+print("===============================")
 
+print("⏳ Menunggu media diproses Threads...")
+time.sleep(30)
 print(
     "Total media:",
     len(child_ids)
