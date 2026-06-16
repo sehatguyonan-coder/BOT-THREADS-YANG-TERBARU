@@ -180,3 +180,44 @@ print("\n========================")
 print("SEMUA CHILD BERHASIL")
 print("TOTAL CHILD:", len(child_ids))
 print("========================")
+# ===============================
+# BUAT CAROUSEL CONTAINER
+# ===============================
+
+print("\n🎠 Membuat Carousel Container")
+
+
+url = f"https://graph.threads.net/v1.0/{user_id}/threads"
+
+
+payload = {
+    "media_type": "CAROUSEL",
+    "children": ",".join(child_ids),
+    "text": caption,
+    "access_token": token
+}
+
+
+response = requests.post(
+    url,
+    data=payload
+)
+
+
+hasil = response.json()
+
+
+print("RESPONSE CAROUSEL:")
+print(hasil)
+
+
+if "id" not in hasil:
+    print("❌ Gagal membuat Carousel Container")
+    exit()
+
+
+carousel_id = hasil["id"]
+
+
+print("\n✅ Carousel Container berhasil dibuat")
+print("Carousel ID:", carousel_id)
