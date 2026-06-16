@@ -1,8 +1,7 @@
-import time
 import os
-import json
 import requests
 import gspread
+import time
 
 from datetime import datetime, timedelta
 from google.oauth2.service_account import Credentials
@@ -478,6 +477,15 @@ print(
 # PUBLISH CAROUSEL KE THREADS
 # ======================================
 
+print(
+    "\n⏳ Menunggu Carousel selesai diproses..."
+)
+
+time.sleep(30)
+
+print(
+    "✅ Carousel siap dipublish"
+)
 
 print(
     "\n🚀 Publish Carousel ke Threads"
