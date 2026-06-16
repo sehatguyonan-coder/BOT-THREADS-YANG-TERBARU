@@ -1,115 +1,76 @@
-import os
 import csv
+import os
 from datetime import datetime, timedelta
 
 
-# ======================================
-# KONFIGURASI THREADS
-# ======================================
+# ===============================
+# WAKTU WIB
+# ===============================
 
-ACCESS_TOKEN = os.getenv("THREADS_ACCESS_TOKEN")
-USER_ID = os.getenv("THREADS_USER_ID")
-
-
-if not ACCESS_TOKEN:
-    print("❌ THREADS_ACCESS_TOKEN tidak ditemukan")
-    exit()
-
-
-if not USER_ID:
-    print("❌ THREADS_USER_ID tidak ditemukan")
-    exit()
-
+wib = datetime.utcnow() + timedelta(hours=7)
 
 print("✅ Secret Threads terbaca")
 
+token = os.getenv("THREADS_ACCESS_TOKEN")
+user_id = os.getenv("THREADS_USER_ID")
 
-# ======================================
-# WAKTU SEKARANG WIB
-# ======================================
-
-sekarang = datetime.utcnow() + timedelta(hours=7)
-
-print("Waktu WIB:", sekarang.strftime("%Y-%m-%d %H:%M"))
-
-
-# ======================================
-# BACA FILE JADWAL V2
-# ======================================
-
-try:
-    with open(
-        "jadwal.csv",
-        "r",
-        encoding="utf-8"
-    ) as file:
-
-        jadwal = list(csv.DictReader(file))
-
-except Exception as e:
-
-    print("❌ Gagal membaca jadwal.csv")
-    print(e)
+if not token or not user_id:
+    print("❌ Secret tidak ditemukan")
     exit()
 
 
-if not jadwal:
+print("Waktu WIB:", wib.strftime("%Y-%m-%d %H:%M"))
 
-    print("❌ jadwal.csv kosong")
-    exit()
+
+# ===============================
+# BACA CSV
+# ===============================
+
+with open("jadwal.csv", "r", encoding="utf-8") as file:
+    data = csv.DictReader(file)
+    rows = list(data)
 
 
 print("✅ Jadwal berhasil dibaca")
 
 
-# ======================================
-# CARI POSTING PENDING
-# ======================================
+# ===============================
+# CARI JADWAL PENDING
+# ===============================
 
-posting = None
-index_posting = None
+postingan = None
 
+for row in rows:
 
-for index, row in enumerate(jadwal):
+    status = row["STATUS"].strip()
 
-    status = row["STATUS"].strip().upper()
-
-
-    if status != "PENDING":
-        continue
+    tanggal = row["TANGGAL"].strip()
+    jam = row["JAM"].strip()
 
 
-    waktu_jadwal = datetime.strptime(
-        row["TANGGAL"].strip()
-        + " "
-        + row["JAM"].strip(),
+    jadwal = datetime.strptime(
+        f"{tanggal} {jam}",
         "%Y-%m-%d %H:%M"
     )
 
 
-    if sekarang >= waktu_jadwal:
-
-        posting = row
-        index_posting = index
+    if status == "PENDING" and wib >= jadwal:
+        postingan = row
         break
 
 
 
-if posting is None:
-
+if not postingan:
     print("⏳ Tidak ada posting yang harus dijalankan")
     exit()
 
 
-print("================================")
-print("🚀 JADWAL POSTING DITEMUKAN")
-print("================================")
+print("\n🚀 JADWAL POSTING DITEMUKAN")
 
 
-# ======================================
-# AMBIL SEMUA MEDIA
-# ======================================
-
+# ===============================
+# AMBIL MEDIA
+# ===============================
 
 media_list = []
 
@@ -121,39 +82,45 @@ for kolom in [
     "MEDIA4"
 ]:
 
-    link = posting[kolom].strip()
-
+    link = postingan[kolom].strip()
 
     if link:
         media_list.append(link)
 
 
 
-print("Jumlah media:", len(media_list))
+print("\nJumlah media:", len(media_list))
 
 
-for nomor, media in enumerate(
-    media_list,
-    start=1
-):
+for i, media in enumerate(media_list, start=1):
 
-    print(f"MEDIA {nomor}:")
-    print(media)
-
+    if ".mp4" in media.lower():
+        jenis = "VIDEO"
+    else:
+        jenis = "IMAGE"
 
 
-# ======================================
-# TAMPILKAN CAPTION
-# ======================================
+    print(
+        f"""
+MEDIA {i}
+Jenis : {jenis}
+Link  : {media}
+"""
+    )
 
 
-caption = posting["CAPTION"].strip()
+# ===============================
+# CAPTION
+# ===============================
 
 
-print("================================")
+caption = postingan["CAPTION"]
+
+
 print("CAPTION:")
+print("================")
 print(caption)
-print("================================")
+print("================")
 
 
-print("✅ TEST V2 BERHASIL")
+print("\n✅ STEP 3 BERHASIL")
