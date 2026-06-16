@@ -397,6 +397,8 @@ print(
 
 print(
     "✅ Semua child media berhasil"
+    print("⏳ Menunggu media diproses Threads...")
+    time.sleep(30)
 )
 
 print(
