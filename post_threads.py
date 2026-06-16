@@ -1,3 +1,4 @@
+import time
 import os
 import json
 import requests
@@ -409,6 +410,7 @@ print(
 
 
 # ======================================
+time.sleep(30)
 # MEMBUAT CAROUSEL CONTAINER
 # ======================================
 
