@@ -106,7 +106,7 @@ sheet = client.open_by_key(
 )
 
 
-worksheet = sheet.sheet1
+worksheet = sheet.worksheet("IMPORT BARU")
 
 
 print(
