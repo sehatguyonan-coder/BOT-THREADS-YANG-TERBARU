@@ -239,36 +239,52 @@ print(
 # AMBIL MEDIA
 # ======================================
 
-
 media_list = []
 
 
 for nomor in range(1, 4):
 
-    url = str(
-        posting.get(
-            f"MEDIA{nomor}",
-            ""
+    url = posting.get(
+        f"MEDIA{nomor}"
+    )
+
+    tipe = posting.get(
+        f"TYPE{nomor}"
+    )
+
+
+    # Bersihkan nilai kosong dari Google Sheet
+    if url is None:
+        continue
+
+
+    url = str(url).strip()
+
+
+    if url == "":
+        continue
+
+
+    if tipe is None:
+        tipe = ""
+
+
+    tipe = str(tipe).strip().upper()
+
+
+    if tipe == "":
+        print(
+            f"⚠️ MEDIA{nomor} memiliki URL tetapi TYPE kosong"
         )
-    ).strip()
+        continue
 
 
-    tipe = str(
-        posting.get(
-            f"TYPE{nomor}",
-            ""
-        )
-    ).strip().upper()
-
-
-    if url:
-
-        media_list.append(
-            {
-                "url": url,
-                "type": tipe
-            }
-        )
+    media_list.append(
+        {
+            "url": url,
+            "type": tipe
+        }
+    )
 
 
 if not media_list:
@@ -281,7 +297,7 @@ if not media_list:
 
 
 print(
-    f"📁 Jumlah media: {len(media_list)}"
+    f"📁 Jumlah media valid: {len(media_list)}"
 )
 # ======================================
 # UPLOAD CHILD MEDIA CONTAINER
