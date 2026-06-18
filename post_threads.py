@@ -367,24 +367,6 @@ print(
 
 time.sleep(30)
 
-
-publish_url = (
-    f"https://graph.threads.net/v1.0/"
-    f"{user_id}/threads_publish"
-)
-
-
-response = requests.post(
-    publish_url,
-    data={
-        "creation_id": creation_id,
-        "access_token": access_token
-    }
-)
-
-    result = response.json()
-
-
     if "id" in result:
 
         print(
