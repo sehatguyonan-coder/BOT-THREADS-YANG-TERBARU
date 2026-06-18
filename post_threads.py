@@ -3,7 +3,7 @@ import json
 import time
 import requests
 import gspread
-from datetime import datetime
+from datetime import datetime, timedelta
 from google.oauth2.service_account import Credentials
 
 
@@ -76,7 +76,7 @@ def load_accounts():
 
 def get_current_time():
 
-    sekarang = datetime.now()
+    sekarang = datetime.now() + timedelta(hours=7)
 
     tanggal = sekarang.strftime(
         "%Y-%m-%d"
@@ -100,7 +100,7 @@ def get_pending_posts(worksheet):
 
     hasil = []
 
-    sekarang = datetime.now()
+    sekarang = datetime.now() + timedelta(hours=7)
 
 
     for nomor_baris, row in enumerate(
