@@ -100,7 +100,7 @@ def get_pending_posts(worksheet):
 
     hasil = []
 
-    tanggal_sekarang, jam_sekarang = get_current_time()
+    sekarang = datetime.now()
 
 
     for nomor_baris, row in enumerate(
@@ -119,11 +119,21 @@ def get_pending_posts(worksheet):
             jam = row[3].strip()
 
 
-            if (
-                status == "PENDING"
-                and tanggal == tanggal_sekarang
-                and jam == jam_sekarang
-            ):
+            if status != "PENDING":
+                continue
+
+
+            if not tanggal or not jam:
+                continue
+
+
+            waktu_jadwal = datetime.strptime(
+                f"{tanggal} {jam}",
+                "%Y-%m-%d %H:%M"
+            )
+
+
+            if sekarang >= waktu_jadwal:
 
                 hasil.append(
                     {
