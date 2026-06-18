@@ -29,7 +29,9 @@ credentials = Credentials.from_service_account_info(
     ]
 )
 
-client = gspread.authorize(credentials)
+client = gspread.authorize(
+    credentials
+)
 
 spreadsheet = client.open_by_key(
     GOOGLE_SHEET_ID
@@ -51,15 +53,19 @@ def load_accounts():
 
         accounts = json.load(file)
 
+
     print(
         "\n======================"
     )
+
     print(
         f"Total akun ditemukan: {len(accounts)}"
     )
+
     print(
         "======================"
     )
+
 
     for akun in accounts:
 
@@ -67,31 +73,13 @@ def load_accounts():
             f"✅ {akun['username']}"
         )
 
+
     return accounts
 
 
 # ==================================================
-# WAKTU SEKARANG
-# ==================================================
-
-def get_current_time():
-
-    sekarang = datetime.now() + timedelta(hours=7)
-
-    tanggal = sekarang.strftime(
-        "%Y-%m-%d"
-    )
-
-    jam = sekarang.strftime(
-        "%H:%M"
-    )
-
-    return tanggal, jam
-
-
-# ==================================================
 # MENCARI POSTING YANG SIAP DIPOSTING
-# DI SETIAP TAB AKUN
+# BERDASARKAN TANGGAL DAN JAM
 # ==================================================
 
 def get_pending_posts(worksheet):
@@ -100,7 +88,9 @@ def get_pending_posts(worksheet):
 
     hasil = []
 
-    sekarang = datetime.now() + timedelta(hours=7)
+    sekarang = datetime.now() + timedelta(
+        hours=7
+    )
 
 
     for nomor_baris, row in enumerate(
@@ -115,15 +105,16 @@ def get_pending_posts(worksheet):
         try:
 
             status = row[1].strip().upper()
+
             tanggal = row[2].strip()
-            jam = row[3].strip()
 
+            jam = row[3].strip()            if status != "PENDING":
 
-            if status != "PENDING":
                 continue
 
 
             if not tanggal or not jam:
+
                 continue
 
 
@@ -146,11 +137,13 @@ def get_pending_posts(worksheet):
         except Exception as e:
 
             print(
-                f"Error membaca baris {nomor_baris}: {e}"
+                f"❌ Error membaca baris {nomor_baris}: {e}"
             )
 
 
     return hasil
+
+
 # ==================================================
 # MENGAMBIL DATA POSTING DARI GOOGLE SHEET
 # ==================================================
@@ -158,14 +151,22 @@ def get_pending_posts(worksheet):
 def get_post_data(row):
 
     return {
+
+        # Kolom K
         "caption": row[10].strip(),
 
+        # Kolom E, G, I
         "media": [
+
             row[4].strip(),
+
             row[6].strip(),
+
             row[8].strip()
+
         ]
     }
+
 
 # ==================================================
 # UPLOAD MEDIA KE THREADS
@@ -185,21 +186,26 @@ def upload_media(
 
 
     payload = {
+
         "media_type": media_type,
+
         "image_url": None,
+
         "video_url": None,
+
         "access_token": access_token
+
     }
 
 
-    if media_type == "IMAGE":
-
-        payload["image_url"] = media_url
-
-
-    elif media_type == "VIDEO":
+    if media_type == "VIDEO":
 
         payload["video_url"] = media_url
+
+
+    elif media_type == "IMAGE":
+
+        payload["image_url"] = media_url
 
 
     response = requests.post(
@@ -216,23 +222,20 @@ def upload_media(
         print(
             "❌ Gagal upload media:"
         )
-        print(result)
+
+        print(
+            result
+        )
 
         return None
 
 
-    media_id = result["id"]
-
-
     print(
-        f"✅ Media berhasil dibuat: {media_id}"
+        f"✅ Media berhasil dibuat: {result['id']}"
     )
 
 
-    return media_id
-
-
-# ==================================================
+    return result["id"]# ==================================================
 # CEK STATUS PROCESSING VIDEO
 # ==================================================
 
@@ -282,8 +285,11 @@ def wait_until_ready(
             return False
 
 
-        time.sleep(5)# ==================================================
-# MEMBUAT DAN PUBLISH POST THREADS
+        time.sleep(5)
+
+
+# ==================================================
+# MEMBUAT CAROUSEL DAN PUBLISH KE THREADS
 # ==================================================
 
 def publish_threads(
@@ -293,6 +299,15 @@ def publish_threads(
     media_ids
 ):
 
+    if len(media_ids) < 2:
+
+        print(
+            "❌ Carousel minimal harus memiliki 2 media"
+        )
+
+        return False
+
+
     create_url = (
         f"https://graph.threads.net/v1.0/"
         f"{user_id}/threads"
@@ -300,10 +315,15 @@ def publish_threads(
 
 
     payload = {
+
         "media_type": "CAROUSEL",
+
         "children": ",".join(media_ids),
+
         "text": caption,
+
         "access_token": access_token
+
     }
 
 
@@ -321,7 +341,10 @@ def publish_threads(
         print(
             "❌ Gagal membuat carousel:"
         )
-        print(result)
+
+        print(
+            result
+        )
 
         return False
 
@@ -330,13 +353,9 @@ def publish_threads(
 
 
     print(
-        f"✅ Carousel dibuat: {creation_id}"
+        f"✅ Carousel berhasil dibuat: {creation_id}"
     )
 
-
-    # ==========================================
-    # PUBLISH KE THREADS
-    # ==========================================
 
     publish_url = (
         f"https://graph.threads.net/v1.0/"
@@ -359,25 +378,26 @@ def publish_threads(
     if "id" in result:
 
         print(
-            f"🎉 Berhasil posting: {result['id']}"
+            f"🎉 BERHASIL POSTING: {result['id']}"
         )
 
         return True
 
 
-    else:
+    print(
+        "❌ Gagal publish:"
+    )
 
-        print(
-            "❌ Gagal publish:"
-        )
+    print(
+        result
+    )
 
-        print(result)
 
-        return False
+    return False
 
 
 # ==================================================
-# UBAH STATUS DI GOOGLE SHEET
+# UPDATE STATUS POSTING DI GOOGLE SHEET
 # ==================================================
 
 def update_status(
@@ -413,14 +433,25 @@ accounts = load_accounts()
 for account in accounts:
 
     username = account["username"]
+
     access_token = account["access_token"]
+
     user_id = account["user_id"]
+
     sheet_name = account["sheet"]
 
 
-    print("\n========================")
-    print(f"MEMPROSES AKUN: {username}")
-    print("========================")
+    print(
+        "\n========================"
+    )
+
+    print(
+        f"MEMPROSES AKUN: {username}"
+    )
+
+    print(
+        "========================"
+    )
 
 
     try:
@@ -428,6 +459,7 @@ for account in accounts:
         worksheet = spreadsheet.worksheet(
             sheet_name
         )
+
 
     except Exception as e:
 
@@ -459,7 +491,9 @@ for account in accounts:
 
     for post in posts:
 
+
         baris_sheet = post["baris"]
+
 
         data = get_post_data(
             post["data"]
@@ -467,6 +501,7 @@ for account in accounts:
 
 
         caption = data["caption"]
+
         media_urls = data["media"]
 
 
@@ -475,25 +510,31 @@ for account in accounts:
 
         for media_url in media_urls:
 
+
             if not media_url:
 
                 continue
 
 
-if ".mp4" in media_url.lower():
+            # Deteksi jenis file Dropbox
+            if ".mp4" in media_url.lower():
 
-    media_type = "VIDEO"
+                media_type = "VIDEO"
 
-elif ".png" in media_url.lower():
 
-    media_type = "IMAGE"
+            elif ".png" in media_url.lower():
 
-else:
+                media_type = "IMAGE"
 
-    print(
-        f"❌ Format tidak dikenali: {media_url}"
-    )
-    continue
+
+            else:
+
+                print(
+                    f"❌ Format tidak dikenali: {media_url}"
+                )
+
+                continue
+
 
             print(
                 f"📤 Upload {media_type}: {media_url}"
@@ -513,6 +554,7 @@ else:
                 continue
 
 
+            # Video harus selesai diproses
             if media_type == "VIDEO":
 
                 ready = wait_until_ready(
@@ -535,10 +577,10 @@ else:
             )
 
 
-        if not media_ids:
+        if len(media_ids) < 2:
 
             print(
-                "❌ Tidak ada media yang berhasil upload"
+                "❌ Tidak cukup media untuk membuat carousel"
             )
 
             continue
@@ -563,9 +605,11 @@ else:
 print(
     "\n========================"
 )
+
 print(
     "🎉 SEMUA AKUN SELESAI DIPROSES"
 )
+
 print(
     "========================"
 )
