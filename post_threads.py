@@ -237,7 +237,7 @@ def upload_media(
     )
 
 
-return result["id"]
+    return result["id"]
 
 # ==================================================
 # CEK STATUS PROCESSING VIDEO
@@ -357,35 +357,7 @@ def publish_threads(
 
 
     print(
-        f"✅ Carousel berhasil dibuat: {creation_id}"
-    )
-
-
-print(
-    "⏳ Menunggu carousel selesai diproses..."
-)
-
-time.sleep(30)
-
-    if "id" in result:
-
-        print(
-            f"🎉 BERHASIL POSTING: {result['id']}"
-        )
-
-        return True
-
-
-    print(
-        "❌ Gagal publish:"
-    )
-
-    print(
-        result
-    )
-
-
-    return False
+f"✅ Carousel berhasil dibuat: {creation_id}"
 
 
 # ==================================================
