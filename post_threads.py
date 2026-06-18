@@ -480,16 +480,20 @@ for account in accounts:
                 continue
 
 
-            if media_url.lower().endswith(
-                ".mp4"
-            ):
+if ".mp4" in media_url.lower():
 
-                media_type = "VIDEO"
+    media_type = "VIDEO"
 
-            else:
+elif ".png" in media_url.lower():
 
-                media_type = "IMAGE"
+    media_type = "IMAGE"
 
+else:
+
+    print(
+        f"❌ Format tidak dikenali: {media_url}"
+    )
+    continue
 
             print(
                 f"📤 Upload {media_type}: {media_url}"
