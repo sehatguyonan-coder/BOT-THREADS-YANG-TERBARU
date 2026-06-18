@@ -359,18 +359,17 @@ def publish_threads(
     )
 
 
-    publish_url = (
-        f"https://graph.threads.net/v1.0/"
-        f"{user_id}/threads_publish"
+    print(
+        "⏳ Menunggu carousel selesai diproses..."
     )
 
+    time.sleep(30)
+
+    publish_url = (
 
     response = requests.post(
-        publish_url,
-        data={
-            "creation_id": creation_id,
-            "access_token": access_token
-        }
+        f"https://graph.threads.net/v1.0/"
+        f"{user_id}/threads_publish"
     )
 
 
