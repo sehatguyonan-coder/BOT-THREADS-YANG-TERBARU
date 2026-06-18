@@ -108,7 +108,9 @@ def get_pending_posts(worksheet):
 
             tanggal = row[2].strip()
 
-            jam = row[3].strip()            if status != "PENDING":
+            jam = row[3].strip()
+            
+            if status != "PENDING":
 
                 continue
 
