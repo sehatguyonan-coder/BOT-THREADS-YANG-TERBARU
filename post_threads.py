@@ -148,7 +148,9 @@ def get_pending_posts(worksheet):
             print(
                 f"Error membaca baris {nomor_baris}: {e}"
             )
-            return hasil
+
+
+    return hasil
 # ==================================================
 # MENGAMBIL DATA POSTING DARI GOOGLE SHEET
 # ==================================================
@@ -156,15 +158,14 @@ def get_pending_posts(worksheet):
 def get_post_data(row):
 
     return {
-        "caption": row[4].strip(),
+        "caption": row[10].strip(),
 
         "media": [
-            row[5].strip(),
-            row[7].strip(),
-            row[9].strip()
+            row[4].strip(),
+            row[6].strip(),
+            row[8].strip()
         ]
     }
-
 
 # ==================================================
 # UPLOAD MEDIA KE THREADS
