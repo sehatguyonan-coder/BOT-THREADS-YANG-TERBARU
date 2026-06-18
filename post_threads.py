@@ -357,7 +357,56 @@ def publish_threads(
 
 
     print(
-f"✅ Carousel berhasil dibuat: {creation_id}"
+        f"✅ Carousel berhasil dibuat: {creation_id}"
+    )
+
+
+    print(
+        "⏳ Menunggu carousel selesai diproses..."
+    )
+
+
+    time.sleep(30)
+
+
+    publish_url = (
+        f"https://graph.threads.net/v1.0/"
+        f"{user_id}/threads_publish"
+    )
+
+
+    response = requests.post(
+        publish_url,
+        data={
+            "creation_id": creation_id,
+            "access_token": access_token
+        }
+    )
+
+
+    result = response.json()
+
+
+    if "id" in result:
+
+        print(
+            f"🎉 BERHASIL POSTING: {result['id']}"
+        )
+
+        return True
+
+
+    print(
+        "❌ Gagal publish:"
+    )
+
+
+    print(
+        result
+    )
+
+
+    return False
 
 
 # ==================================================
