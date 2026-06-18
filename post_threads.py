@@ -237,7 +237,9 @@ def upload_media(
     )
 
 
-    return result["id"]# ==================================================
+return result["id"]
+
+# ==================================================
 # CEK STATUS PROCESSING VIDEO
 # ==================================================
 
@@ -359,19 +361,26 @@ def publish_threads(
     )
 
 
-    print(
-        "⏳ Menunggu carousel selesai diproses..."
-    )
+print(
+    "⏳ Menunggu carousel selesai diproses..."
+)
 
-    time.sleep(30)
+time.sleep(30)
 
-    publish_url = (
 
-    response = requests.post(
-        f"https://graph.threads.net/v1.0/"
-        f"{user_id}/threads_publish"
-    )
+publish_url = (
+    f"https://graph.threads.net/v1.0/"
+    f"{user_id}/threads_publish"
+)
 
+
+response = requests.post(
+    publish_url,
+    data={
+        "creation_id": creation_id,
+        "access_token": access_token
+    }
+)
 
     result = response.json()
 
@@ -424,7 +433,9 @@ def update_status(
 
         print(
             f"❌ Gagal update status: {e}"
-        )# ==================================================
+        )
+
+# ==================================================
 # PROGRAM UTAMA
 # ==================================================
 
