@@ -154,16 +154,21 @@ def get_post_data(row):
 
     nomor_file = row[4].strip()
 
-VIDEO_URL = "http://156.230.188.87:11244/videos"
-IMAGE_URL = "http://156.230.188.87:11244/images"
+    BASE_URL = "http://156.230.188.87:11244/videos"
 
-return {
-    "caption": row[10].strip(),
-    "media": [
-        f"{VIDEO_URL}/{nomor_file}.mp4",
-        f"{IMAGE_URL}/{nomor_file}.png"
-    ]
-}
+    return {
+
+        # Kolom K
+        "caption": row[10].strip(),
+
+        "media": [
+
+            f"{BASE_URL}/{nomor_file}.mp4",
+
+            f"{BASE_URL}/{nomor_file}.png"
+
+        ]
+    }
 
 # ==================================================
 # UPLOAD MEDIA KE THREADS
