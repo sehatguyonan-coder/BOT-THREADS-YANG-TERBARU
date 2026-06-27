@@ -152,19 +152,20 @@ def get_pending_posts(worksheet):
 
 def get_post_data(row):
 
+    nomor_file = row[4].strip()
+
+    BASE_URL = "http://156.230.188.87:11244/videos"
+
     return {
 
         # Kolom K
         "caption": row[10].strip(),
 
-        # Kolom E, G, I
         "media": [
 
-            row[4].strip(),
+            f"{BASE_URL}/{nomor_file}.mp4",
 
-            row[6].strip(),
-
-            row[8].strip()
+            f"{BASE_URL}/{nomor_file}.png"
 
         ]
     }
