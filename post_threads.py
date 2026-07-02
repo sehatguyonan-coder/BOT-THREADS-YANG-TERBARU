@@ -216,7 +216,16 @@ def upload_media(
     )
 
 
-    result = response.json()
+print("STATUS:", response.status_code)
+print("RESPONSE:")
+print(response.text)
+
+result = response.json()
+
+if "id" not in result:
+    print("❌ Gagal upload media:")
+    print(result)
+    return None
 
 
     if "id" not in result:
