@@ -210,39 +210,32 @@ def upload_media(
         payload["image_url"] = media_url
 
 
-response = requests.post(
-    url,
-    data=payload
-)
+def upload_media(...):
 
-print("STATUS:", response.status_code)
-print("RESPONSE:")
-print(response.text)
-
-try:
-    result = response.json()
-except Exception as e:
-    print("⚠ Gagal membaca JSON")
-    print("ERROR:", e)
-    return None
-
-if "id" not in result:
-
-    print(
-        "❌ Gagal upload media:"
+    response = requests.post(
+        url,
+        data=payload
     )
 
-    print(
-        result
-    )
+    print("STATUS:", response.status_code)
+    print("RESPONSE:")
+    print(response.text)
 
-    return None
+    try:
+        result = response.json()
+    except Exception as e:
+        print("⚠ Gagal membaca JSON")
+        print("ERROR:", e)
+        return None
 
-print(
-    f"✅ Media berhasil dibuat: {result['id']}"
-)
+    if "id" not in result:
+        print("❌ Gagal upload media:")
+        print(result)
+        return None
 
-return result["id"]
+    print(f"✅ Media berhasil dibuat: {result['id']}")
+
+    return result["id"]
 
 # ==================================================
 # CEK STATUS PROCESSING VIDEO
