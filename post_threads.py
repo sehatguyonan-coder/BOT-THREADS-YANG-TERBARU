@@ -173,7 +173,6 @@ def get_post_data(row):
 # ==================================================
 # UPLOAD MEDIA KE THREADS
 # ==================================================
-
 def upload_media(
     access_token,
     user_id,
@@ -181,36 +180,13 @@ def upload_media(
     media_type
 ):
 
-    url = (
-        f"https://graph.threads.net/v1.0/"
-        f"{user_id}/threads"
-    )
-
-
-    payload = {
-
-        "media_type": media_type,
-
-        "image_url": None,
-
-        "video_url": None,
-
-        "access_token": access_token
-
-    }
-
+    ...
 
     if media_type == "VIDEO":
-
         payload["video_url"] = media_url
 
-
     elif media_type == "IMAGE":
-
         payload["image_url"] = media_url
-
-
-def upload_media(access_token, user_id, media_type, media_url, text):
 
     response = requests.post(
         url,
@@ -236,7 +212,6 @@ def upload_media(access_token, user_id, media_type, media_url, text):
     print(f"✅ Media berhasil dibuat: {result['id']}")
 
     return result["id"]
-
 # ==================================================
 # CEK STATUS PROCESSING VIDEO
 # ==================================================
