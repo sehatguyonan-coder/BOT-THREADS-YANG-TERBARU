@@ -210,7 +210,7 @@ def upload_media(
         payload["image_url"] = media_url
 
 
-def upload_media(...):
+def upload_media(access_token, user_id, media_type, media_url, text):
 
     response = requests.post(
         url,
