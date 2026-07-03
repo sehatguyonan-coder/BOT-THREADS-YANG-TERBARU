@@ -180,7 +180,17 @@ def upload_media(
     media_type
 ):
 
-    ...
+    url = (
+        f"https://graph.threads.net/v1.0/"
+        f"{user_id}/threads"
+    )
+
+    payload = {
+        "media_type": media_type,
+        "image_url": None,
+        "video_url": None,
+        "access_token": access_token
+    }
 
     if media_type == "VIDEO":
         payload["video_url"] = media_url
